@@ -8,15 +8,19 @@ jobs:
     strategy:
       matrix:
         include:
-          - docker_image: ubuntu:bionic
+          - docker_image: osrf/ros:melodic-desktop-full
             ros_distribution: melodic
-          - docker_image: ubuntu:focal
+          - docker_image: osrf/ros:noetic-desktop-full
             ros_distribution: noetic
     container:
       image: ${{ matrix.docker_image }}
     steps:
-      - name: Setup ROS environment
+      - name: Setup
         uses: actions/checkout@v3
+      - name: Install docker
+        run: |
+          apt-get update
+          apt-get install -y docker.io
       - name: Build and test ROS
         uses: 'ros-industrial/industrial_ci@0.10.0'
         env:
