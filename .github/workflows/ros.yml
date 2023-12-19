@@ -1,0 +1,36 @@
+name: Build & Test ROS Packages
+
+on:
+  workflow_call:
+
+jobs:
+  build_and_test_ros_package:
+    runs-on: self-hosted # Use self-hosted runner
+    strategy: # Define a matrix of ROS distributions and Docker images
+      matrix:
+        include:
+          - docker_image: osrf/ros:noetic-desktop-full
+            ros_distribution: noetic
+          - docker_image: osrf/ros:melodic-desktop-full
+            ros_distribution: melodic
+
+    container: # Use the Docker image defined in the matrix
+      image: ${{ matrix.docker_image }}
+    steps:
+      - name: Setup ROS environment
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: ${{ matrix.ros_distribution }}
+
+      - name: Build and test ROS 2
+        uses: ros-tooling/action-ros-ci@v0.2
+        with:
+          package-name: ${{ github.event.repository.name }}
+          target-ros1-distro: ${{ matrix.ros_distribution }}
+          import-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for Python style issues
+        uses: ros-tooling/action-ros-lint@0.1.2
+        with:
+          package-name: ${{ github.event.repository.name }}
+          linter: pycodestyle
