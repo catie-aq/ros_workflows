@@ -1,6 +1,8 @@
 name: CI
 
-on: [ pull_request ]
+on:
+  workflow_call:
+    
 
 jobs:
   industrial_ci:
