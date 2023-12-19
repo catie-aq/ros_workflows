@@ -8,9 +8,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - docker_image: osrf/ros:melodic-desktop-full
+          - docker_image: ubuntu:bionic
             ros_distribution: melodic
-          - docker_image: osrf/ros:noetic-desktop-full
+          - docker_image: ubuntu:focal
             ros_distribution: noetic
     container:
       image: ${{ matrix.docker_image }}
