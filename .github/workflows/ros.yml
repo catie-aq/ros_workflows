@@ -1,21 +1,24 @@
 name: CI
 
-on:
-  workflow_call:
+on: workflow_call
 
 jobs:
   industrial_ci:
     runs-on: self-hosted
     strategy:
       matrix:
-        env:
-          - { ROS_DISTRO: melodic, ROS_REPO: main, DOCKER_IMAGE: osrf/ros:melodic-desktop-full }
-          - { ROS_DISTRO: noetic, ROS_REPO: main, DOCKER_IMAGE: osrf/ros:noetic-desktop-full }
+        include:
+          - docker_image: osrf/ros:melodic-desktop-full
+            ros_distribution: melodic
+          - docker_image: osrf/ros:noetic-desktop-full
+            ros_distribution: noetic
     container:
-      image: ${{ matrix.DOCKER_IMAGE }}
+      image: ${{ matrix.docker_image }}
     steps:
       - name: Setup ROS environment
         uses: actions/checkout@v3
       - name: Build and test ROS
         uses: 'ros-industrial/industrial_ci@0.10.0'
-        env: ${{matrix.env}}
+        env:
+          ROS_DISTRO: ${{ matrix.ros_distribution }}
+          ROS_REPO: main
