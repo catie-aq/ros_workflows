@@ -12,6 +12,8 @@ jobs:
             ros_distribution: melodic
           - docker_image: ubuntu:focal
             ros_distribution: noetic
+    container:
+      image: ${{ matrix.docker_image }}
     steps:
       - name: Setup ROS environment
         uses: actions/checkout@v3
