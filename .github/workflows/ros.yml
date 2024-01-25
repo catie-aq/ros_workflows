@@ -23,8 +23,6 @@ jobs:
         include:
           - docker_image: osrf/ros:noetic-desktop-full
             ros_distribution: noetic
-          - docker_image: osrf/ros:melodic-desktop-full
-            ros_distribution: melodic
     container: # Use the Docker image defined in the matrix
       image: ${{ matrix.docker_image }}
     steps:
