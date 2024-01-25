@@ -2,6 +2,11 @@ name: Build & Test ROS Packages
 
 on:
   workflow_call:
+    secrets:
+      PAT:
+        required: false
+        description: 'A GitHub Personal Access Token (PAT) used to import the private repository into the container.'
+        
 
 jobs:
   build_and_test_ros2_package:
@@ -24,4 +29,4 @@ jobs:
         with:
           package-name: ${{ github.event.repository.name }}
           target-ros1-distro: ${{ matrix.ros_distribution }}
-          import-token: ${{ secrets.GITHUB_TOKEN }}
+          import-token: ${{ secrets.PAT }}
