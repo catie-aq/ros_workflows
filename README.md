@@ -15,6 +15,21 @@ distributions ROS.
 3. *Vérifier les problèmes de style Python* - C'est une étape optionnelle pour vérifier les problèmes de style Python à l'aide de
    l'outil `ros-tooling/action-ros-lint`.
 
+### Construction & Test des Paquets ROS 1
+
+Ce workflow est conçu pour automatiser la construction et les tests de paquets ROS 1. Il utilise un runner auto-hébergé et prend en charge **uniquement** la distribution ROS Noetic.
+
+1. *Configuration de l'environnement ROS* - Cette étape prépare l'environnement ROS à l'aide de l'outil `ros-tooling/setup-ros`.
+2. *Construire et tester ROS 1* - Cette étape construit et teste le paquet ROS 1 à l'aide de l'outil `ros-tooling/action-ros-ci`.
+3. *Vérifier les problèmes de style Python* - C'est une étape optionnelle pour vérifier les problèmes de style Python à l'aide de
+   l'outil `ros-tooling/action-ros-lint`.
+
+Le workflow possèdes les paramètres suivants :
+
+`package-name` : Nom du paquet ROS à construire et tester, **Obligatoire**.
+
+`pat` : Token d'accès personnel (PAT) à utiliser pour cloner les dépôts privés. Si il n'y a pas de *dépendances privées*, ce paramètre peut être mis à `${{ secrets.GITHUB_TOKEN }}`.
+
 ## Utilisation
 
 Vous pouvez utiliser ce workflow dans votre dépôt en ajoutant le bloc de code suivant à votre fichier `.github/workflows/<name>.yml` :
