@@ -2,6 +2,11 @@ name: Build & Test ROS Packages
 
 on:
   workflow_call:
+    inputs:
+      package-name:
+        description: 'The name of the ROS package to build and test.'
+        required: true
+        type: string
     secrets:
       PAT:
         required: false
@@ -27,6 +32,6 @@ jobs:
       - name: Build and test ROS
         uses: ros-tooling/action-ros-ci@v0.2
         with:
-          package-name: ${{ github.event.repository.name }}
+          package-name: ${{ inputs.package-name }}
           target-ros1-distro: ${{ matrix.ros_distribution }}
           import-token: ${{ secrets.PAT }}
