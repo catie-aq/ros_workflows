@@ -14,6 +14,8 @@ on:
         
 
 jobs:
+  pre-commit:
+    uses: catie-aq/generic_workflows/.github/workflows/pre-commit.yaml@main
   build_and_test_ros_package:
     runs-on: self-hosted # Use self-hosted runner
     strategy: # Define a matrix of ROS distributions and Docker images
@@ -21,6 +23,8 @@ jobs:
         include:
           - docker_image: osrf/ros:noetic-desktop-full
             ros_distribution: noetic
+          - docker_image: osrf/ros:melodic-desktop-full
+            ros_distribution: melodic
     container: # Use the Docker image defined in the matrix
       image: ${{ matrix.docker_image }}
     steps:

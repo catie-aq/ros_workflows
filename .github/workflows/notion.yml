@@ -34,4 +34,8 @@ jobs:
           file-path: ${{ inputs.file-path }}
           notion-token: ${{ secrets.notion-token }}
           notion-page-id: ${{ inputs.notion-page-id }}
+      - name: Depreciated workflow
+        if: always()
+        run: "::warning:: This workflow is depreciated, please use catie-aq/generic_workflows/.github/workflows/notion.yml@main instead."
+
 
