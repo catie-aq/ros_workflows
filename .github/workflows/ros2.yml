@@ -5,7 +5,8 @@ on:
 
 jobs:
   build_and_test_ros2_package:
-    runs-on: self-hosted # Use self-hosted runner
+    runs-on:
+      group: default
     strategy: # Define a matrix of ROS distributions and Docker images
       matrix:
         include:
