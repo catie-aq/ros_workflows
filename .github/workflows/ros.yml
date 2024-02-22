@@ -17,7 +17,8 @@ jobs:
   pre-commit:
     uses: catie-aq/generic_workflows/.github/workflows/pre-commit.yaml@main
   build_and_test_ros_package:
-    runs-on: self-hosted # Use self-hosted runner
+    runs-on:
+      group: default
     strategy: # Define a matrix of ROS distributions and Docker images
       matrix:
         include:
