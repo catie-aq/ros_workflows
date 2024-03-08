@@ -1,0 +1,17 @@
+name: Publish new tag and pre-release when version is bumped
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        type: string
+        description: "The name of the image to build"
+        required: false
+        default: "osrf/ros:humble-desktop-full"
+
+jobs:
+  bump-tag:
+    uses: catie-aq/generic_workflows/.github/workflows/autotag.yml@main
+    with:
+      image: ${{ inputs.image }}
+      version_cmd: "ros2 pkg xml ${{github.event.repository.name}} --tag version"
