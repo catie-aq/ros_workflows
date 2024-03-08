@@ -14,5 +14,5 @@ jobs:
     uses: catie-aq/generic_workflows/.github/workflows/autotag.yml@main
     with:
       image: ${{ inputs.image }}
-      extra_cmd: "source /opt/ros/humble/setup.bash"
+      extra_cmd: "/bin/sh /opt/ros/humble/setup.sh"
       version_cmd: "ros2 pkg xml ${{github.event.repository.name}} --tag version"
