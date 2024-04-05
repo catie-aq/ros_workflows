@@ -1,42 +1,12 @@
-name: Sync Readme to Notion
+name: "Sync README to Notion"
 
 on:
-  workflow_call:
-    inputs:
-      notion-page-id:
-        description: "Notion page ID to sync to"
-        required: true
-        type: string
-      file-path:
-        description: "File path to sync to Notion"
-        required: false
-        default: "./README.md"
-        type: string
-    secrets:
-      notion-token:
-        description: "Notion token to use for authentication"
-        required: true
-
+  push:
 
 jobs:
-  sync_readme_to_notion:
-    runs-on:
-      group: default
-    name: Checkout and upload Readme to Notion
-    container:
-      image: ubuntu:22.04
-    steps:
-      - name: checkout
-        uses: "actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b"
-      - name: Upload to Notion
-        uses: agonzalezl/readme-to-notion-action@88b6cb8eea354ac61c589f540e40cacadf0c8ecb
-        with:
-          static-top-text: "_This documentation is auto-generated from [${{ github.repository }}/README.md](https://github.com/${{ github.repository }})_"
-          file-path: ${{ inputs.file-path }}
-          notion-token: ${{ secrets.notion-token }}
-          notion-page-id: ${{ inputs.notion-page-id }}
-      - name: Depreciated workflow
-        if: always()
-        run: "::warning:: This workflow is depreciated, please use catie-aq/generic_workflows/.github/workflows/notion.yml@main instead."
-
-
+  notion:
+    uses: catie-aq/generic_workflows/.github/workflows/notion.yml@main
+    with:
+      notion-page-id: "9f87732a9c5f4f88af950eb54c542453"
+    secrets:
+      notion-token: ${{ secrets.NOTION_TOKEN }}
