@@ -11,7 +11,9 @@ jobs:
         include:
           - docker_image: osrf/ros:humble-desktop-full
             ros_distribution: humble
-          - docker_image: osrf/ros:rolling-desktop-full-jammy
+          - docker_image: osrf/ros:jazzy-desktop-full
+            ros_distribution: jazzy
+          - docker_image: osrf/ros:rolling-desktop-full
             ros_distribution: rolling
 
     container: # Use the Docker image defined in the matrix
