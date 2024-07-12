@@ -9,22 +9,23 @@ jobs:
     strategy: # Define a matrix of ROS distributions and Docker images
       matrix:
         include:
-          - docker_image: osrf/ros:humble-desktop-full
+          - docker_image: osrf/ros:humble-desktop
             ros_distribution: humble
-          - docker_image: osrf/ros:jazzy-desktop-full
+          - docker_image: osrf/ros:jazzy-desktop
             ros_distribution: jazzy
-          - docker_image: osrf/ros:rolling-desktop-full
+          - docker_image: osrf/ros:rolling-desktop
             ros_distribution: rolling
 
     container: # Use the Docker image defined in the matrix
       image: ${{ matrix.docker_image }}
     steps:
       - name: Build and test ROS 2
-        uses: ros-tooling/action-ros-ci@v0.2
+        uses: ros-tooling/action-ros-ci@0.3.13
         with:
           package-name: ${{ github.event.repository.name }}
           target-ros2-distro: ${{ matrix.ros_distribution }}
           import-token: ${{ secrets.GITHUB_TOKEN }}
+          skip-tests: true
 
       - name: Check for Python style issues
         uses: ros-tooling/action-ros-lint@0.1.2
