@@ -26,6 +26,8 @@ jobs:
           target-ros2-distro: ${{ matrix.ros_distribution }}
           import-token: ${{ secrets.GITHUB_TOKEN }}
           skip-tests: true
+          skip-rosdep-install: true
+          rosdep-check: true
 
       - name: Check for Python style issues
         uses: ros-tooling/action-ros-lint@0.1.2
