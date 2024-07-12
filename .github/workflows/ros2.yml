@@ -9,9 +9,11 @@ jobs:
     strategy: # Define a matrix of ROS distributions and Docker images
       matrix:
         include:
-          - docker_image: osrf/ros:humble-desktop-full
+          - docker_image: ubuntu:22.04
             ros_distribution: humble
-          - docker_image: osrf/ros:rolling-desktop-full-jammy
+          - docker_image: ubuntu:24.04
+            ros_distribution: jazzy
+          - docker_image: ubuntu:24.04
             ros_distribution: rolling
 
     container: # Use the Docker image defined in the matrix
