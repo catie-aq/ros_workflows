@@ -20,3 +20,23 @@ jobs:
     with:
       image: ${{ inputs.image }}
       version_cmd: grep "<version>" ${{ inputs.path}} | sed -n 's|<version>\(.*\)</version>|\1|p' | tr -d ' '
+  draft-release:
+    needs: bump-tag
+    if: ${{ needs.bump-tag.outputs.bump == 'true' }}
+    runs-on:
+      group: "default"
+    container:
+      image: ${{ inputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          draft: true
+          tag_name: ${{ needs.bump-tag.outputs.version }}
+          generate_release_notes: true
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
