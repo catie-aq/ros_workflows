@@ -14,8 +14,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - docker_image: osrf/ros:humble-desktop
-            ros_distribution: humble
           - docker_image: osrf/ros:jazzy-desktop
             ros_distribution: jazzy
           - docker_image: osrf/ros:rolling-desktop
