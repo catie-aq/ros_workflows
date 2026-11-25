@@ -1,3 +1,5 @@
+# Kept for existing callers; new callers use ros2-ci.yml (lint, coverage, summaries,
+# integration job, actions of this repository instead of action-ros-ci).
 name: Build & Test ROS 2 Packages
 
 on:
@@ -34,15 +36,20 @@ on:
         required: false
         default: "[]"
       timeout-minutes:
-        description: "Timeout of the job, in minutes."
+        description: "Timeout of the job, in minutes. The default is GitHub's own job timeout, as before this input existed."
         type: number
         required: false
-        default: 60
+        default: 360
       container-env:
         description: 'JSON object of environment variables set in the container, for example {"LIBGL_ALWAYS_SOFTWARE":"1"}.'
         type: string
         required: false
         default: "{}"
+      runner:
+        description: "Runner of the job: sonu-github-arc, or sonu-github-arc-gpu."
+        type: string
+        required: false
+        default: "sonu-github-arc"
     secrets:
       PAT:
         required: true
@@ -50,7 +57,7 @@ on:
 
 jobs:
   build_and_test_ros2_package:
-    runs-on: sonu-github-arc
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout-minutes }}
     strategy: # One entry per distribution requested by the caller
       fail-fast: false
