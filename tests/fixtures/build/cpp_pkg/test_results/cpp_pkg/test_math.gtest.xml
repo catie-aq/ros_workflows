@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="3" failures="1" disabled="0" errors="0" time="0.001" timestamp="2026-11-25T10:00:00" name="AllTests">
+  <testsuite name="MathTest" tests="3" failures="1" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-11-25T10:00:00">
+    <testcase name="ClampInside" file="/ws/src/cpp_pkg/test/test_math.cpp" line="5" status="run" result="completed" time="0." timestamp="2026-11-25T10:00:00" classname="MathTest" />
+    <testcase name="ClampBelow" file="/ws/src/cpp_pkg/test/test_math.cpp" line="10" status="run" result="completed" time="0." timestamp="2026-11-25T10:00:00" classname="MathTest" />
+    <testcase name="Pipe|Name" file="/ws/src/cpp_pkg/test/test_math.cpp" line="15" status="run" result="completed" time="0." timestamp="2026-11-25T10:00:00" classname="MathTest">
+      <failure message="/ws/src/cpp_pkg/test/test_math.cpp:16&#x0A;Expected equality of these values:&#x0A;  a | b" type=""><![CDATA[/ws/src/cpp_pkg/test/test_math.cpp:16
+Expected equality of these values:]]></failure>
+    </testcase>
+  </testsuite>
+</testsuites>
