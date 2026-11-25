@@ -1,0 +1,340 @@
+name: ROS 2 CI
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: "Runner of every job: sonu-github-arc, or sonu-github-arc-gpu."
+        type: string
+        required: false
+        default: "sonu-github-arc"
+      distributions:
+        description: 'JSON array of ROS 2 distributions, one build-test job each, for example ["jazzy"].'
+        type: string
+        required: false
+        default: '["jazzy"]'
+      image:
+        description: "Container image of the lint and build-test jobs. Empty means ros:<distribution>-ros-base."
+        type: string
+        required: false
+        default: ""
+      build-types:
+        description: 'JSON array of CMAKE_BUILD_TYPE values, one build-test job each, for example ["RelWithDebInfo", "Debug"].'
+        type: string
+        required: false
+        default: '["RelWithDebInfo"]'
+      packages:
+        description: "Packages to build (with their dependencies) and test, whitespace separated. Empty means every package of the repository."
+        type: string
+        required: false
+        default: ""
+      pytest-args:
+        description: 'JSON array of pytest arguments of the build-test job, for example ["-m", "not integration"].'
+        type: string
+        required: false
+        default: "[]"
+      container-env:
+        description: 'JSON object of environment variables of the build-test and integration jobs, for example {"ROS_DOMAIN_ID": "42"}.'
+        type: string
+        required: false
+        default: "{}"
+      timeout-minutes:
+        description: "Timeout of each build-test job, in minutes."
+        type: number
+        required: false
+        default: 60
+      submodules:
+        description: "Submodules checkout: false, true or recursive."
+        type: string
+        required: false
+        default: "false"
+      repos-file:
+        description: "Path, in the repository, of a .repos file of upstream repositories imported with vcs. Empty means none."
+        type: string
+        required: false
+        default: ""
+      skip-keys:
+        description: "rosdep keys to skip, whitespace separated."
+        type: string
+        required: false
+        default: ""
+      rosdep-check:
+        description: "Fail when rosdep check finds a missing system dependency after the install."
+        type: boolean
+        required: false
+        default: true
+      merge-install:
+        description: "Build with --merge-install."
+        type: boolean
+        required: false
+        default: false
+      cmake-args:
+        description: "Extra CMake arguments, whitespace separated."
+        type: string
+        required: false
+        default: ""
+      coverage:
+        description: "Coverage reports: pytest-cov for Python, gcovr for C and C++."
+        type: boolean
+        required: false
+        default: true
+      sanitizer:
+        description: "none or asan (AddressSanitizer on C and C++ code)."
+        type: string
+        required: false
+        default: "none"
+      ccache:
+        description: "Compile through ccache, kept between runs with actions/cache."
+        type: boolean
+        required: false
+        default: true
+      retries:
+        description: "Rerun failing tests up to this number of times. 0 means no rerun."
+        type: number
+        required: false
+        default: 0
+      pre-commit:
+        description: "Run the pre-commit job (generic_workflows, needs a .pre-commit-config.yaml)."
+        type: boolean
+        required: false
+        default: true
+      lint:
+        description: "Run the lint job: ament_xmllint on package.xml, ament_lint_cmake on CMakeLists.txt."
+        type: boolean
+        required: false
+        default: true
+      lint-ruff:
+        description: "Also run ruff check in the lint job, with the configuration of the repository."
+        type: boolean
+        required: false
+        default: false
+      integration:
+        description: "Run the integration job after build-test."
+        type: boolean
+        required: false
+        default: false
+      integration-runner:
+        description: "Runner of the integration job. Empty means the runner input. With sonu-github-arc-gpu, the job runs on the runner itself, where the GPU is visible."
+        type: string
+        required: false
+        default: ""
+      integration-image:
+        description: "Container image of the integration job on a CPU runner. Empty means osrf/ros:<first distribution>-desktop-full."
+        type: string
+        required: false
+        default: ""
+      integration-packages:
+        description: "Packages of the integration job. Empty means the packages input."
+        type: string
+        required: false
+        default: ""
+      integration-pytest-args:
+        description: "JSON array of pytest arguments of the integration job."
+        type: string
+        required: false
+        default: '["-m", "integration"]'
+      integration-rendering:
+        description: "OpenGL rendering of the integration job: auto (hardware when a GPU is visible), hardware or software."
+        type: string
+        required: false
+        default: "auto"
+      integration-timeout-minutes:
+        description: "Timeout of the integration job, in minutes."
+        type: number
+        required: false
+        default: 45
+      concurrency-group:
+        description: "Suffix of the concurrency group, to call this workflow several times from one workflow."
+        type: string
+        required: false
+        default: ""
+      toolkit-ref:
+        description: "Revision of catie-aq/ros_workflows whose actions and scripts the jobs use. Keep it equal to the revision of this workflow."
+        type: string
+        required: false
+        default: "main"
+    secrets:
+      token:
+        description: "Token for private submodules and upstream repositories. Empty means GITHUB_TOKEN."
+        required: false
+
+permissions: read-all
+
+defaults:
+  run:
+    shell: bash
+
+# A new push on a pull request cancels the run in progress; pushes on branches never cancel.
+concurrency:
+  group: ros2-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ inputs.concurrency-group }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pre-commit:
+    if: ${{ inputs.pre-commit }}
+    uses: catie-aq/generic_workflows/.github/workflows/pre-commit.yaml@main
+
+  lint:
+    if: ${{ inputs.lint }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 15
+    container:
+      image: ${{ inputs.image || format('ros:{0}-ros-base', fromJSON(inputs.distributions)[0]) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: ws/src/${{ github.event.repository.name }}
+
+      - name: Checkout ros_workflows
+        uses: actions/checkout@v4
+        with:
+          repository: catie-aq/ros_workflows
+          ref: ${{ inputs.toolkit-ref }}
+          path: .ros_workflows
+
+      - name: Lint
+        uses: ./.ros_workflows/ros2_lint
+        with:
+          path: ws/src
+          xmllint: "true"
+          cmake-lint: "true"
+          ruff: ${{ inputs.lint-ruff }}
+
+  build-test:
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    strategy:
+      fail-fast: false
+      matrix:
+        distribution: ${{ fromJSON(inputs.distributions) }}
+        build-type: ${{ fromJSON(inputs.build-types) }}
+    container:
+      image: ${{ inputs.image || format('ros:{0}-ros-base', matrix.distribution) }}
+      env: ${{ fromJSON(inputs.container-env) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: ws/src/${{ github.event.repository.name }}
+          submodules: ${{ inputs.submodules }}
+          token: ${{ secrets.token || github.token }}
+
+      - name: Checkout ros_workflows
+        uses: actions/checkout@v4
+        with:
+          repository: catie-aq/ros_workflows
+          ref: ${{ inputs.toolkit-ref }}
+          path: .ros_workflows
+
+      - name: Set up workspace
+        uses: ./.ros_workflows/ros2_setup
+        with:
+          distribution: ${{ matrix.distribution }}
+          repos-file: ${{ inputs.repos-file && format('ws/src/{0}/{1}', github.event.repository.name, inputs.repos-file) || '' }}
+          packages: ${{ inputs.packages }}
+          skip-keys: ${{ inputs.skip-keys }}
+          rosdep-check: ${{ inputs.rosdep-check }}
+          token: ${{ secrets.token }}
+
+      - name: Build
+        uses: ./.ros_workflows/colcon_build
+        with:
+          distribution: ${{ matrix.distribution }}
+          packages: ${{ inputs.packages }}
+          merge-install: ${{ inputs.merge-install }}
+          build-type: ${{ matrix.build-type }}
+          coverage: ${{ inputs.coverage }}
+          sanitizer: ${{ inputs.sanitizer }}
+          ccache: ${{ inputs.ccache }}
+          cache-key: ${{ github.event.repository.name }}-${{ matrix.distribution }}-${{ matrix.build-type }}-${{ inputs.sanitizer }}-${{ inputs.coverage }}
+          cmake-args: ${{ inputs.cmake-args }}
+
+      - name: Test
+        uses: ./.ros_workflows/colcon_test
+        with:
+          distribution: ${{ matrix.distribution }}
+          packages: ${{ inputs.packages }}
+          merge-install: ${{ inputs.merge-install }}
+          pytest-args: ${{ inputs.pytest-args }}
+          retries: ${{ inputs.retries }}
+          coverage: ${{ inputs.coverage }}
+          report-title: Tests ROS 2 (${{ matrix.distribution }}, ${{ matrix.build-type }})
+          artifact-name: test-reports-${{ matrix.distribution }}-${{ matrix.build-type }}${{ inputs.concurrency-group && format('-{0}', inputs.concurrency-group) || '' }}
+
+      - name: Upload logs
+        if: ${{ failure() }}
+        uses: ./.ros_workflows/ros2_logs
+        with:
+          artifact-name: ros2-logs-${{ matrix.distribution }}-${{ matrix.build-type }}${{ inputs.concurrency-group && format('-{0}', inputs.concurrency-group) || '' }}
+
+  integration:
+    if: ${{ inputs.integration }}
+    needs: build-test
+    runs-on: ${{ inputs.integration-runner || inputs.runner }}
+    timeout-minutes: ${{ inputs.integration-timeout-minutes }}
+    # On the GPU runner the card is only visible to the runner container, not to
+    # job containers (helm_github-arc, value_gpu.yaml): run there without container,
+    # ros2_setup installs ROS 2. Elsewhere, a desktop-full image with software rendering.
+    container: ${{ !contains(inputs.integration-runner || inputs.runner, 'gpu') && (inputs.integration-image || format('osrf/ros:{0}-desktop-full', fromJSON(inputs.distributions)[0])) || '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: ws/src/${{ github.event.repository.name }}
+          submodules: ${{ inputs.submodules }}
+          token: ${{ secrets.token || github.token }}
+
+      - name: Checkout ros_workflows
+        uses: actions/checkout@v4
+        with:
+          repository: catie-aq/ros_workflows
+          ref: ${{ inputs.toolkit-ref }}
+          path: .ros_workflows
+
+      - name: Export environment
+        env:
+          CONTAINER_ENV: ${{ inputs.container-env }}
+        run: python3 .ros_workflows/scripts/export_env.py "${CONTAINER_ENV}"
+
+      - name: Detect rendering
+        env:
+          RENDERING: ${{ inputs.integration-rendering }}
+        run: .ros_workflows/scripts/detect_rendering.sh
+
+      - name: Set up workspace
+        uses: ./.ros_workflows/ros2_setup
+        with:
+          distribution: ${{ fromJSON(inputs.distributions)[0] }}
+          repos-file: ${{ inputs.repos-file && format('ws/src/{0}/{1}', github.event.repository.name, inputs.repos-file) || '' }}
+          packages: ${{ inputs.integration-packages || inputs.packages }}
+          skip-keys: ${{ inputs.skip-keys }}
+          rosdep-check: ${{ inputs.rosdep-check }}
+          token: ${{ secrets.token }}
+
+      - name: Build
+        uses: ./.ros_workflows/colcon_build
+        with:
+          distribution: ${{ fromJSON(inputs.distributions)[0] }}
+          packages: ${{ inputs.integration-packages || inputs.packages }}
+          merge-install: ${{ inputs.merge-install }}
+          ccache: ${{ inputs.ccache }}
+          cache-key: ${{ github.event.repository.name }}-integration-${{ fromJSON(inputs.distributions)[0] }}
+          cmake-args: ${{ inputs.cmake-args }}
+
+      - name: Test
+        uses: ./.ros_workflows/colcon_test
+        with:
+          distribution: ${{ fromJSON(inputs.distributions)[0] }}
+          packages: ${{ inputs.integration-packages || inputs.packages }}
+          merge-install: ${{ inputs.merge-install }}
+          pytest-args: ${{ inputs.integration-pytest-args }}
+          retries: ${{ inputs.retries }}
+          report-title: Tests d'intégration ROS 2 (${{ fromJSON(inputs.distributions)[0] }}, rendu ${{ env.ROS2_CI_RENDERING }})
+          artifact-name: test-reports-integration${{ inputs.concurrency-group && format('-{0}', inputs.concurrency-group) || '' }}
+
+      - name: Upload logs
+        if: ${{ failure() }}
+        uses: ./.ros_workflows/ros2_logs
+        with:
+          artifact-name: ros2-logs-integration${{ inputs.concurrency-group && format('-{0}', inputs.concurrency-group) || '' }}
