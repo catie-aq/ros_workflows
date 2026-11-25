@@ -1,0 +1,8 @@
+__pycache__/
+.venv/
+.ruff_cache/
+.pytest_cache/
+# colcon output of local runs on the sample workspace
+/tests/fixtures/ros_ws/build/
+/tests/fixtures/ros_ws/install/
+/tests/fixtures/ros_ws/log/
