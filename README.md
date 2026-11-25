@@ -11,8 +11,8 @@ Ce dépôt contient des workflows GitHub Actions réutilisables et des actions c
 | Workflow | Rôle | Doc |
 | -------------------- | ---------------------------------------- | ---- |
 | `ros2-ci.yml` | CI ROS 2 : pre-commit, lint, build et tests par distribution et type de build, couverture, résumé des tests, intégration sur runner CPU ou GPU. | [CI ROS 2](docs/ros2-ci.md) |
-| `ros2-release.yml` | Paquets Debian (bloom) et documentation d'API (rosdoc2) en artefacts. | [Paquets Debian et documentation d'API ROS 2](docs/ros2-release.md) |
-| `ros-tag.yml` | Tag à partir de la version du `package.xml` et brouillon de release ; notes tirées du changelog et livrables joints en option. | [Tag et brouillon de release ROS](docs/ros-tag.md) |
+| `ros2-release.yml` | Paquets Debian (bloom) et documentation d'API (rosdoc2) en artefacts, à appeler à part (par exemple à la publication d'une release). | [Paquets Debian et documentation d'API ROS 2](docs/ros2-release.md) |
+| `ros-tag.yml` | Tag à partir de la version du `package.xml` et brouillon de release ; notes tirées du changelog en option. | [Tag et brouillon de release ROS](docs/ros-tag.md) |
 | `ros2.yml` | Ancienne CI ROS 2 par `action-ros-ci`, gardée pour ses appelants ; préférer `ros2-ci.yml`. | [Compilation de paquets ROS 2](docs/ros2.md) |
 | `ros.yml` | Déprécié : `pre-commit` puis compilation et tests d'un paquet ROS 1 sur Noetic. | [Compilation et tests de paquets ROS 1](docs/ros.md) |
 | `selftest.yml` | CI de ce dépôt (interne). | [Auto-test de ros_workflows](docs/selftest.md) |
