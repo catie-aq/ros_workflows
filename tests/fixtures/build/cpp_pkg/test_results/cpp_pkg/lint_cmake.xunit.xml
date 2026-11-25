@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="cpp_pkg.lint_cmake" tests="1" errors="1" failures="0" time="0.1">
+  <testcase name="lint_cmake.missing_result" classname="cpp_pkg.lint_cmake">
+    <error message="The test did not generate a result file." />
+  </testcase>
+</testsuite>
