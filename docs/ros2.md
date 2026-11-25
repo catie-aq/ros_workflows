@@ -4,9 +4,11 @@ titre: Compilation de paquets ROS 2
 
 # Compilation de paquets ROS 2
 
-Compile le paquet ROS 2 porté par le dépôt appelant, par défaut sur les distributions Jazzy et Rolling. À utiliser comme CI d'un dépôt de paquet ROS 2. Sans entrée, les tests ne sont pas lancés et rosdep n'installe rien ; les entrées ci-dessous les activent et règlent distributions, image, paquets et délai.
+Compile le paquet ROS 2 porté par le dépôt appelant, par défaut sur les distributions Jazzy et Rolling, avec `ros-tooling/action-ros-ci`. Sans entrée, les tests ne sont pas lancés et rosdep n'installe rien ; les entrées ci-dessous les activent et règlent distributions, image, paquets, délai et runner.
 
-Fichier : `.github/workflows/ros2.yml` · Déclencheur : `workflow_call` · Runner : `sonu-github-arc`
+Pour un nouveau dépôt, préférer [`ros2-ci.yml`](ros2-ci.md) : lint, couverture, résumé des tests, test d'intégration, runner GPU. `ros2.yml` reste en place, avec les mêmes défauts, pour ses appelants actuels (dépôts C-Rob, MiniPock, `stelia_aoa-ros-driver`).
+
+Fichier : `.github/workflows/ros2.yml` · Déclencheur : `workflow_call` · Runner : entrée `runner` (`sonu-github-arc` par défaut)
 
 ## Utilisation
 
@@ -34,8 +36,9 @@ Pour un paquet qui importe des dépôts privés, passer un jeton personnel à la
 | `docker-image` | string | Image du conteneur, la même pour toutes les distributions. Vide : `osrf/ros:<distribution>-desktop`. | non | `""` |
 | `packages` | string | Paquets à compiler et tester, séparés par des espaces. Vide : nom du dépôt appelant. | non | `""` |
 | `pytest-args` | string | Tableau JSON de chaînes passé à `colcon test` (`--pytest-args`). Vide ou `[]` : rien n'est passé. | non | `'[]'` |
-| `timeout-minutes` | number | Délai maximal du job, en minutes. | non | `60` |
+| `timeout-minutes` | number | Délai maximal du job, en minutes. Le défaut est celui de GitHub, comme avant l'ajout de l'entrée. | non | `360` |
 | `container-env` | string | Objet JSON de variables d'environnement définies dans le conteneur. | non | `'{}'` |
+| `runner` | string | Runner du job : `sonu-github-arc` ou `sonu-github-arc-gpu`. | non | `sonu-github-arc` |
 
 `pytest-args` est un tableau JSON, pas une ligne de commande : `'["-m","not integration"]'` donne `--pytest-args -m "not integration"`. Il est transmis à `action-ros-ci` via `colcon-defaults` (`{"test": {"pytest-args": [...]}}`).
 
@@ -72,7 +75,7 @@ Aucune.
 
 ## Fonctionnement
 
-Job `build_and_test_ros2_package` (runner `sonu-github-arc`, matrice `fail-fast: false`, `timeout-minutes` = entrée du même nom, conteneur selon la matrice). La matrice vient de `distributions` ; avec les défauts :
+Job `build_and_test_ros2_package` (runner = entrée `runner`, matrice `fail-fast: false`, `timeout-minutes` = entrée du même nom, conteneur selon la matrice). La matrice vient de `distributions` ; avec les défauts :
 
 | Distribution | Image du conteneur |
 | ------------ | ---------------------------------------- |
@@ -98,3 +101,6 @@ Avec `fail-fast: false`, l'échec d'une distribution n'annule pas l'autre.
 - Un dépôt dont le paquet porte un autre nom, ou qui contient plusieurs paquets, passe `packages`.
 - Pas de `ros-tooling/setup-ros` ni d'étape de lint `ros-tooling/action-ros-lint`, contrairement à ce qu'indiquait l'ancien README (lint retiré au commit `886178f`, distribution Humble retirée au commit `3d6c081`).
 - Pas de `pre-commit` dans ce workflow, contrairement à `ros.yml`.
+- Le nom des jobs de la matrice a changé avec les entrées configurables : `build_and_test_ros2_package (jazzy)` au lieu de `build_and_test_ros2_package (osrf/ros:jazzy-desktop, jazzy)`. Aucun appelant n'en fait un contrôle obligatoire (vérifié le 25/11/2026).
+- Sur `sonu-github-arc-gpu`, la carte n'est pas visible du conteneur du job : ce runner n'apporte rien à ce workflow. Le rendu matériel passe par le job `integration` de `ros2-ci.yml`.
+- `stelia_aoa-ros-driver` appelle ce workflow sans le secret `PAT`, pourtant requis : son appel est refusé par GitHub, indépendamment de ce dépôt.
