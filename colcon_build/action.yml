@@ -1,0 +1,78 @@
+name: "colcon build"
+description: "Build a colcon workspace: package selection, build type, coverage and sanitizer flags, ccache kept between runs."
+inputs:
+  workspace:
+    description: "colcon workspace."
+    required: false
+    default: "ws"
+  distribution:
+    description: "ROS distribution. Empty means ROS_DISTRO of the image."
+    required: false
+    default: ""
+  packages:
+    description: "Build these packages and their dependencies (--packages-up-to), whitespace separated. Empty means every package."
+    required: false
+    default: ""
+  merge-install:
+    description: "Build with --merge-install."
+    required: false
+    default: "false"
+  symlink-install:
+    description: "Build with --symlink-install."
+    required: false
+    default: "false"
+  build-type:
+    description: "CMAKE_BUILD_TYPE: Debug, Release, RelWithDebInfo or MinSizeRel."
+    required: false
+    default: "RelWithDebInfo"
+  coverage:
+    description: "Compile C and C++ with --coverage, for gcovr reports in colcon_test."
+    required: false
+    default: "false"
+  sanitizer:
+    description: "none or asan (AddressSanitizer on C and C++)."
+    required: false
+    default: "none"
+  ccache:
+    description: "Compile through ccache, its directory saved with actions/cache."
+    required: false
+    default: "true"
+  cache-key:
+    description: "Part of the ccache cache key that tells builds apart (distribution, build type, flags)."
+    required: false
+    default: "default"
+  cmake-args:
+    description: "Extra CMake arguments, whitespace separated."
+    required: false
+    default: ""
+  colcon-args:
+    description: "Extra colcon build arguments, whitespace separated."
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Restore ccache
+      if: ${{ inputs.ccache == 'true' }}
+      uses: actions/cache@v4
+      with:
+        path: .ccache
+        key: ccache-${{ inputs.cache-key }}-${{ github.sha }}
+        restore-keys: |
+          ccache-${{ inputs.cache-key }}-
+
+    - name: colcon build
+      shell: bash
+      env:
+        WORKSPACE: ${{ inputs.workspace }}
+        DISTRIBUTION: ${{ inputs.distribution }}
+        PACKAGES: ${{ inputs.packages }}
+        MERGE_INSTALL: ${{ inputs.merge-install }}
+        SYMLINK_INSTALL: ${{ inputs.symlink-install }}
+        BUILD_TYPE: ${{ inputs.build-type }}
+        COVERAGE: ${{ inputs.coverage }}
+        SANITIZER: ${{ inputs.sanitizer }}
+        CCACHE: ${{ inputs.ccache }}
+        CMAKE_ARGS: ${{ inputs.cmake-args }}
+        COLCON_ARGS: ${{ inputs.colcon-args }}
+      run: "${GITHUB_ACTION_PATH}/../scripts/colcon_build.sh"

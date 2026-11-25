@@ -1,0 +1,31 @@
+name: "ROS 2 logs"
+description: "Upload colcon logs (<workspace>/log) and ROS logs (~/.ros/log) as one artifact, typically with if: failure()."
+inputs:
+  workspace:
+    description: "colcon workspace."
+    required: false
+    default: "ws"
+  artifact-name:
+    description: "Name of the artifact."
+    required: false
+    default: "ros2-logs"
+  retention-days:
+    description: "Days the artifact is kept."
+    required: false
+    default: "7"
+runs:
+  using: "composite"
+  steps:
+    - name: Collect logs
+      shell: bash
+      run: '"${GITHUB_ACTION_PATH}/../scripts/collect_logs.sh" "${WORKSPACE}" ros2-logs'
+      env:
+        WORKSPACE: ${{ inputs.workspace }}
+
+    - name: Upload logs
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ros2-logs
+        retention-days: ${{ inputs.retention-days }}
+        if-no-files-found: ignore

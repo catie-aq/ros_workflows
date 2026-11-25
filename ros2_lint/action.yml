@@ -1,0 +1,41 @@
+name: "ROS 2 lint"
+description: "Static checks of ROS 2 packages without building them: ament_xmllint on package.xml, ament_lint_cmake on CMakeLists.txt, ruff optional."
+inputs:
+  path:
+    description: "Source tree to check."
+    required: false
+    default: "ws/src"
+  distribution:
+    description: "ROS distribution. Empty means ROS_DISTRO of the image."
+    required: false
+    default: ""
+  xmllint:
+    description: "Check every package.xml against its schema (ament_xmllint)."
+    required: false
+    default: "true"
+  cmake-lint:
+    description: "Check every CMakeLists.txt of a package (ament_lint_cmake)."
+    required: false
+    default: "true"
+  ruff:
+    description: "Run ruff check with the configuration of the tree."
+    required: false
+    default: "false"
+  ruff-version:
+    description: "ruff version installed when ruff is not in the image."
+    required: false
+    default: "0.17.6"
+runs:
+  using: "composite"
+  steps:
+    - name: Lint
+      shell: bash
+      env:
+        LINT_PATH: ${{ inputs.path }}
+        DISTRIBUTION: ${{ inputs.distribution }}
+        XMLLINT: ${{ inputs.xmllint }}
+        CMAKE_LINT: ${{ inputs.cmake-lint }}
+        RUFF: ${{ inputs.ruff }}
+        RUFF_VERSION: ${{ inputs.ruff-version }}
+        RUFF_FORMAT: github
+      run: "${GITHUB_ACTION_PATH}/../scripts/ros2_lint.sh"

@@ -1,0 +1,79 @@
+name: "colcon test"
+description: "Test a built colcon workspace, write a Markdown summary (tests and coverage per package) and upload JUnit and coverage reports."
+inputs:
+  workspace:
+    description: "colcon workspace."
+    required: false
+    default: "ws"
+  distribution:
+    description: "ROS distribution. Empty means ROS_DISTRO of the image."
+    required: false
+    default: ""
+  packages:
+    description: "Test only these packages (--packages-select), whitespace separated. Empty means every package."
+    required: false
+    default: ""
+  merge-install:
+    description: "The workspace was built with --merge-install."
+    required: false
+    default: "false"
+  pytest-args:
+    description: 'JSON array of pytest arguments, for example ["-m", "not integration"].'
+    required: false
+    default: "[]"
+  retries:
+    description: "Rerun failing tests up to this number of times (ctest --retest-until-pass, pytest-rerunfailures). 0 means no rerun."
+    required: false
+    default: "0"
+  coverage:
+    description: "Coverage reports: pytest-cov for Python, gcovr for C and C++ (build with coverage in colcon_build)."
+    required: false
+    default: "false"
+  report-title:
+    description: "Title of the Markdown summary. Empty means Tests ROS 2 (<distribution>)."
+    required: false
+    default: ""
+  artifact-name:
+    description: "Name of the artifact holding JUnit and coverage files and the summary. Empty means no upload."
+    required: false
+    default: "test-reports"
+  colcon-args:
+    description: "Extra colcon test arguments, whitespace separated."
+    required: false
+    default: ""
+outputs:
+  tests:
+    description: "Number of test cases."
+    value: ${{ steps.test.outputs.tests }}
+  failures:
+    description: "Number of failed or errored test cases."
+    value: ${{ steps.test.outputs.failures }}
+  skipped:
+    description: "Number of skipped test cases."
+    value: ${{ steps.test.outputs.skipped }}
+runs:
+  using: "composite"
+  steps:
+    - name: colcon test
+      id: test
+      shell: bash
+      env:
+        WORKSPACE: ${{ inputs.workspace }}
+        DISTRIBUTION: ${{ inputs.distribution }}
+        PACKAGES: ${{ inputs.packages }}
+        MERGE_INSTALL: ${{ inputs.merge-install }}
+        PYTEST_ARGS: ${{ inputs.pytest-args }}
+        RETRIES: ${{ inputs.retries }}
+        COVERAGE: ${{ inputs.coverage }}
+        REPORT_TITLE: ${{ inputs.report-title }}
+        REPORT_DIR: ${{ inputs.workspace }}/test-reports
+        COLCON_ARGS: ${{ inputs.colcon-args }}
+      run: "${GITHUB_ACTION_PATH}/../scripts/colcon_test.sh"
+
+    - name: Upload test reports
+      if: ${{ !cancelled() && inputs.artifact-name != '' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.workspace }}/test-reports
+        if-no-files-found: ignore
