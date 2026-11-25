@@ -35,6 +35,12 @@ resolve_distro() {
   echo "${distro}"
 }
 
+# Setup file of a ROS distribution. ROS_INSTALL_ROOT (default /opt/ros) only
+# exists so that tests can point the scripts at a fake installation.
+ros_setup_file() {
+  echo "${ROS_INSTALL_ROOT:-/opt/ros}/$1/setup.bash"
+}
+
 # Source a setup file; ROS setup files read unset variables, so relax nounset meanwhile.
 source_setup() {
   set +u
@@ -43,7 +49,8 @@ source_setup() {
   set -u
 }
 
-# Install missing apt packages, updating the index once per job.
+# Install missing apt packages, updating the index once per job. The marker
+# file assumes an ephemeral runner or container: one job, one /tmp.
 apt_install() {
   local missing=()
   local package

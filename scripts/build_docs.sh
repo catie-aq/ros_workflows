@@ -19,7 +19,7 @@ group "Install rosdoc2"
 apt_install python3-rosdoc2 doxygen graphviz
 endgroup
 
-source_setup "/opt/ros/${distro}/setup.bash"
+source_setup "$(ros_setup_file "${distro}")"
 if [ -f "${workspace}/install/setup.bash" ]; then
   # Python API pages import the modules: use the built workspace when there is one.
   source_setup "${workspace}/install/setup.bash"

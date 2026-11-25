@@ -19,7 +19,7 @@ source "$(dirname "$0")/common.sh"
 
 workspace="${WORKSPACE:-ws}"
 distro="$(resolve_distro "${DISTRIBUTION:-}")"
-source_setup "/opt/ros/${distro}/setup.bash"
+source_setup "$(ros_setup_file "${distro}")"
 
 flags=()
 linker_flags=()

@@ -16,7 +16,7 @@ source "$(dirname "$0")/common.sh"
 
 lint_path="${LINT_PATH:-ws/src}"
 distro="$(resolve_distro "${DISTRIBUTION:-}")"
-source_setup "/opt/ros/${distro}/setup.bash"
+source_setup "$(ros_setup_file "${distro}")"
 
 # Package directories, skipping trees marked COLCON_IGNORE or AMENT_IGNORE.
 mapfile -t packages < <(
@@ -73,9 +73,22 @@ fi
 
 if [ "${RUFF:-false}" = "true" ]; then
   if ! command -v ruff >/dev/null; then
-    group "Install ruff ${RUFF_VERSION:-0.17.6}"
-    # Standalone binary from Astral, pinned: no pip, no virtual environment in the ROS image.
-    curl -LsSf "https://astral.sh/ruff/${RUFF_VERSION:-0.17.6}/install.sh" | env RUFF_UNMANAGED_INSTALL=/tmp/ruff-bin sh
+    ruff_version="${RUFF_VERSION:-0.17.6}"
+    group "Install ruff ${ruff_version}"
+    # Standalone binary from the GitHub release: no pip, no virtual environment in the
+    # ROS image. Checksum pinned for the default version, otherwise the one published
+    # next to the archive.
+    archive="ruff-$(uname -m)-unknown-linux-gnu.tar.gz"
+    url="https://github.com/astral-sh/ruff/releases/download/${ruff_version}/${archive}"
+    mkdir -p /tmp/ruff-bin
+    curl -fsSL -o "/tmp/ruff-bin/${archive}" "${url}"
+    if [ "${ruff_version}/${archive}" = "0.17.6/ruff-x86_64-unknown-linux-gnu.tar.gz" ]; then
+      expected="94b33791f48cd54ab35ad673a443a5c001d3e6d87effeaba9899070b700d45f3"
+    else
+      expected="$(curl -fsSL "${url}.sha256" | awk '{print $1}')"
+    fi
+    echo "${expected}  /tmp/ruff-bin/${archive}" | sha256sum --check --strict
+    tar -xzf "/tmp/ruff-bin/${archive}" -C /tmp/ruff-bin --strip-components 1
     export PATH="/tmp/ruff-bin:${PATH}"
     endgroup
   fi

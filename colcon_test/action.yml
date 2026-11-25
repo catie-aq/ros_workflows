@@ -76,4 +76,5 @@ runs:
       with:
         name: ${{ inputs.artifact-name }}
         path: ${{ inputs.workspace }}/test-reports
-        if-no-files-found: ignore
+        # The script always writes summary.md there: an empty directory is a bug.
+        if-no-files-found: error

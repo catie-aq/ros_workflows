@@ -19,7 +19,7 @@ distro="$(resolve_distro "${DISTRIBUTION:-}")"
 output_dir="$(mkdir -p "${OUTPUT_DIR:-debs}" && cd "${OUTPUT_DIR:-debs}" && pwd)"
 # shellcheck disable=SC1091
 os_version="$(. /etc/os-release && echo "${VERSION_CODENAME}")"
-source_setup "/opt/ros/${distro}/setup.bash"
+source_setup "$(ros_setup_file "${distro}")"
 
 group "Install packaging tools"
 apt_install python3-bloom fakeroot debhelper dh-python
