@@ -4,7 +4,9 @@ titre: Compilation et tests de paquets ROS 1
 
 # Compilation et tests de paquets ROS 1
 
-Lance `pre-commit` puis compile et teste un paquet ROS 1 sur la distribution Noetic, la seule prise en charge. À utiliser comme CI d'un dépôt de paquet ROS 1.
+> **Déprécié.** ROS 1 Noetic est en fin de vie depuis mai 2025. Le workflow reste en place, sans changement de comportement, pour son seul appelant connu (`catie-aq/ros_sensors`, `.github/workflows/main.yml`, dernier push en janvier 2024 ; recherche `gh search code` du 25/11/2026). Il affiche un avertissement à chaque exécution et sera supprimé quand `ros_sensors` sera archivé ou migré vers ROS 2 ([`ros2-ci.yml`](ros2-ci.md)).
+
+Lance `pre-commit` puis compile et teste un paquet ROS 1 sur la distribution Noetic, la seule prise en charge.
 
 Fichier : `.github/workflows/ros.yml` · Déclencheur : `workflow_call` · Runner : `group: default` (job de compilation) ; `sonu-github-arc` (job `pre-commit`, via `generic_workflows`)
 
@@ -53,8 +55,9 @@ Job `pre-commit` : appel de `catie-aq/generic_workflows/.github/workflows/pre-co
 
 Job `build_and_test_ros_package` (runner `group: default`, conteneur `osrf/ros:noetic-desktop-full`, matrice à une seule entrée `noetic`) :
 
-1. Préparation de l'environnement avec `ros-tooling/setup-ros@v0.7` (`required-ros-distributions: noetic`).
-2. Compilation et tests avec `ros-tooling/action-ros-ci@v0.2` : `package-name` = entrée `package-name`, `target-ros1-distro: noetic`, `import-token` = secret `PAT`.
+1. Avertissement de dépréciation (`::warning`).
+2. Préparation de l'environnement avec `ros-tooling/setup-ros@v0.7` (`required-ros-distributions: noetic`).
+3. Compilation et tests avec `ros-tooling/action-ros-ci@v0.2` : `package-name` = entrée `package-name`, `target-ros1-distro: noetic`, `import-token` = secret `PAT`.
 
 ## Dépendances
 

@@ -1,3 +1,4 @@
+# Deprecated: ROS 1 Noetic is end of life (May 2025). Kept unchanged for ros_sensors.
 name: Build & Test ROS Packages
 
 on:
@@ -11,7 +12,7 @@ on:
       PAT:
         required: false
         description: 'A GitHub Personal Access Token (PAT) used to import the private repository into the container.'
-        
+
 
 jobs:
   pre-commit:
@@ -27,6 +28,9 @@ jobs:
     container: # Use the Docker image defined in the matrix
       image: ${{ matrix.docker_image }}
     steps:
+      - name: Deprecation notice
+        run: echo "::warning title=ros.yml is deprecated::ROS 1 Noetic reached end of life in May 2025. This workflow is kept unchanged for its last caller and will be removed; see docs/ros.md of catie-aq/ros_workflows."
+
       - name: Setup ROS environment
         uses: ros-tooling/setup-ros@v0.7
         with:
