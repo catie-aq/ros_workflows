@@ -1,0 +1,42 @@
+name: "ROS 2 Debian packages"
+description: "Build Debian packages of the workspace packages with bloom-generate rosdebian, in dependency order, and upload them."
+inputs:
+  workspace:
+    description: "colcon workspace, sources in <workspace>/src. Dependencies must be installed (ros2_setup)."
+    required: false
+    default: "ws"
+  distribution:
+    description: "ROS distribution. Empty means ROS_DISTRO of the image."
+    required: false
+    default: ""
+  packages:
+    description: "Package these packages and their workspace dependencies, whitespace separated. Empty means every package."
+    required: false
+    default: ""
+  output-dir:
+    description: "Directory receiving the .deb files."
+    required: false
+    default: "debs"
+  artifact-name:
+    description: "Name of the artifact holding the .deb files. Empty means no upload."
+    required: false
+    default: "debs"
+runs:
+  using: "composite"
+  steps:
+    - name: bloom-generate and debian/rules binary
+      shell: bash
+      env:
+        WORKSPACE: ${{ inputs.workspace }}
+        DISTRIBUTION: ${{ inputs.distribution }}
+        PACKAGES: ${{ inputs.packages }}
+        OUTPUT_DIR: ${{ inputs.output-dir }}
+      run: "${GITHUB_ACTION_PATH}/../scripts/build_debs.sh"
+
+    - name: Upload Debian packages
+      if: ${{ inputs.artifact-name != '' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.output-dir }}/*.deb
+        if-no-files-found: error

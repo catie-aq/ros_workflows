@@ -1,0 +1,167 @@
+name: ROS 2 packages and API docs
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: "Runner of every job: sonu-github-arc, or sonu-github-arc-gpu."
+        type: string
+        required: false
+        default: "sonu-github-arc"
+      distribution:
+        description: "ROS 2 distribution of the Debian packages."
+        type: string
+        required: false
+        default: "jazzy"
+      image:
+        description: "Container image of the jobs. Empty means ros:<distribution>-ros-base."
+        type: string
+        required: false
+        default: ""
+      packages:
+        description: "Packages to package and document (with their workspace dependencies for Debian packages), whitespace separated. Empty means every package."
+        type: string
+        required: false
+        default: ""
+      submodules:
+        description: "Submodules checkout: false, true or recursive."
+        type: string
+        required: false
+        default: "false"
+      repos-file:
+        description: "Path, in the repository, of a .repos file of upstream repositories imported with vcs. Empty means none."
+        type: string
+        required: false
+        default: ""
+      skip-keys:
+        description: "rosdep keys to skip, whitespace separated."
+        type: string
+        required: false
+        default: ""
+      debs:
+        description: "Build Debian packages with bloom (artifact debs-<distribution>)."
+        type: boolean
+        required: false
+        default: true
+      docs:
+        description: "Build the API documentation with rosdoc2 (artifact api-docs)."
+        type: boolean
+        required: false
+        default: true
+      toolkit-ref:
+        description: "Revision of catie-aq/ros_workflows whose actions and scripts the jobs use."
+        type: string
+        required: false
+        default: "main"
+    secrets:
+      token:
+        description: "Token for private submodules and upstream repositories. Empty means GITHUB_TOKEN."
+        required: false
+    outputs:
+      debs-artifact:
+        description: "Name of the artifact holding the .deb files, empty when not built."
+        value: ${{ jobs.debs.outputs.artifact }}
+      docs-artifact:
+        description: "Name of the artifact holding the HTML documentation, empty when not built."
+        value: ${{ jobs.docs.outputs.artifact }}
+
+permissions: read-all
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  debs:
+    if: ${{ inputs.debs }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 60
+    container:
+      image: ${{ inputs.image || format('ros:{0}-ros-base', inputs.distribution) }}
+    outputs:
+      artifact: debs-${{ inputs.distribution }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: ws/src/${{ github.event.repository.name }}
+          submodules: ${{ inputs.submodules }}
+          token: ${{ secrets.token || github.token }}
+
+      - name: Checkout ros_workflows
+        uses: actions/checkout@v4
+        with:
+          repository: catie-aq/ros_workflows
+          ref: ${{ inputs.toolkit-ref }}
+          path: .ros_workflows
+
+      - name: Set up workspace
+        uses: ./.ros_workflows/ros2_setup
+        with:
+          distribution: ${{ inputs.distribution }}
+          repos-file: ${{ inputs.repos-file && format('ws/src/{0}/{1}', github.event.repository.name, inputs.repos-file) || '' }}
+          packages: ${{ inputs.packages }}
+          skip-keys: ${{ inputs.skip-keys }}
+          token: ${{ secrets.token }}
+
+      - name: Debian packages
+        uses: ./.ros_workflows/ros2_debs
+        with:
+          distribution: ${{ inputs.distribution }}
+          packages: ${{ inputs.packages }}
+          artifact-name: debs-${{ inputs.distribution }}
+
+  docs:
+    if: ${{ inputs.docs }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 60
+    container:
+      image: ${{ inputs.image || format('ros:{0}-ros-base', inputs.distribution) }}
+    outputs:
+      artifact: api-docs
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: ws/src/${{ github.event.repository.name }}
+          submodules: ${{ inputs.submodules }}
+          token: ${{ secrets.token || github.token }}
+
+      - name: Checkout ros_workflows
+        uses: actions/checkout@v4
+        with:
+          repository: catie-aq/ros_workflows
+          ref: ${{ inputs.toolkit-ref }}
+          path: .ros_workflows
+
+      - name: Set up workspace
+        uses: ./.ros_workflows/ros2_setup
+        with:
+          distribution: ${{ inputs.distribution }}
+          repos-file: ${{ inputs.repos-file && format('ws/src/{0}/{1}', github.event.repository.name, inputs.repos-file) || '' }}
+          packages: ${{ inputs.packages }}
+          skip-keys: ${{ inputs.skip-keys }}
+          rosdep-check: "false"
+          token: ${{ secrets.token }}
+
+      # Python API pages import the modules, generated messages included: build first.
+      - name: Build
+        uses: ./.ros_workflows/colcon_build
+        with:
+          distribution: ${{ inputs.distribution }}
+          packages: ${{ inputs.packages }}
+          ccache: "false"
+
+      - name: rosdoc2
+        env:
+          DISTRIBUTION: ${{ inputs.distribution }}
+          PACKAGES: ${{ inputs.packages }}
+          OUTPUT_DIR: api-docs
+        run: .ros_workflows/scripts/build_docs.sh
+
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-docs
+          path: api-docs
+          if-no-files-found: error
