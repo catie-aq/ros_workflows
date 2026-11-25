@@ -10,7 +10,8 @@
 #   RETRIES        rerun failing tests up to N times (ctest and pytest-rerunfailures)
 #   COVERAGE       true for Python (pytest-cov) and C/C++ (gcovr) coverage reports
 #   REPORT_TITLE   title of the Markdown summary
-#   REPORT_DIR     directory receiving JUnit and coverage files (default: $WORKSPACE/test-reports)
+#   REPORT_DIR     directory receiving JUnit and coverage files, relative to the
+#                  starting directory (default: $WORKSPACE/test-reports)
 #   COLCON_ARGS    extra colcon test arguments, whitespace separated
 set -euo pipefail
 # shellcheck source=scripts/common.sh disable=SC1091
@@ -21,6 +22,37 @@ workspace="${WORKSPACE:-ws}"
 distro="$(resolve_distro "${DISTRIBUTION:-}")"
 retries="${RETRIES:-0}"
 coverage="${COVERAGE:-false}"
+if ! [[ "${retries}" =~ ^[0-9]+$ ]]; then
+  echo "RETRIES must be a non-negative integer, got '${retries}'." >&2
+  exit 1
+fi
+# Relative to the directory the script is started from, not to the workspace.
+report_dir="${REPORT_DIR:-${workspace}/test-reports}"
+case "${report_dir}" in
+  /*) ;;
+  *) report_dir="$(pwd)/${report_dir}" ;;
+esac
+
+# Parse before anything else: an invalid value must stop the step, not vanish in
+# a process substitution.
+pytest_args=()
+if [ -n "${PYTEST_ARGS:-}" ]; then
+  parsed="$(python3 -c '
+import json, sys
+try:
+    values = json.loads(sys.argv[1] or "[]")
+except json.JSONDecodeError as error:
+    sys.exit(f"PYTEST_ARGS is not valid JSON: {error}")
+if not isinstance(values, list) or not all(isinstance(v, str) for v in values):
+    sys.exit("PYTEST_ARGS must be a JSON array of strings")
+for value in values:
+    # colcon reads arguments starting with a dash as its own options unless prefixed by a space.
+    print(" " + value if value.startswith("-") else value)
+' "${PYTEST_ARGS}")"
+  if [ -n "${parsed}" ]; then
+    mapfile -t pytest_args <<<"${parsed}"
+  fi
+fi
 
 packages_to_install=()
 if [ "${coverage}" = "true" ]; then
@@ -36,23 +68,9 @@ if [ "${#packages_to_install[@]}" -gt 0 ]; then
 fi
 
 cd "${workspace}"
-workspace_path="$(pwd)"
-report_dir="${REPORT_DIR:-${workspace_path}/test-reports}"
-source_setup "/opt/ros/${distro}/setup.bash"
+source_setup "$(ros_setup_file "${distro}")"
 source_setup install/setup.bash
 
-pytest_args=()
-if [ -n "${PYTEST_ARGS:-}" ]; then
-  mapfile -t pytest_args < <(python3 -c '
-import json, sys
-values = json.loads(sys.argv[1] or "[]")
-if not isinstance(values, list) or not all(isinstance(v, str) for v in values):
-    sys.exit("PYTEST_ARGS must be a JSON array of strings")
-for value in values:
-    # colcon reads arguments starting with a dash as its own options unless prefixed by a space.
-    print(" " + value if value.startswith("-") else value)
-' "${PYTEST_ARGS}")
-fi
 if [ "${retries}" -gt 0 ]; then
   pytest_args+=(" --reruns" "${retries}")
 fi

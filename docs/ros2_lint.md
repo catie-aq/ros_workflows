@@ -43,7 +43,7 @@ Une étape `bash` qui lance `scripts/ros2_lint.sh` :
 1. Liste des dossiers de paquets (`package.xml`), hors arborescences marquées `COLCON_IGNORE` ou `AMENT_IGNORE`.
 2. `ament_xmllint` sur tous les `package.xml` : validation contre le schéma déclaré par `<?xml-model?>` (format 2 ou 3), téléchargé depuis `download.ros.org`.
 3. `ament_lint_cmake` sur les `CMakeLists.txt` des paquets.
-4. Si `ruff` : binaire ruff autonome installé depuis Astral à la version `ruff-version` s'il manque, puis `ruff check` (annotations GitHub).
+4. Si `ruff` : s'il manque, binaire ruff téléchargé depuis la release GitHub `astral-sh/ruff` de la version `ruff-version` et vérifié par `sha256sum` (somme épinglée pour la version par défaut, sinon celle publiée à côté de l'archive), puis `ruff check` (annotations GitHub).
 5. Tableau des résultats dans `$GITHUB_STEP_SUMMARY` ; l'étape échoue si un outil échoue, après avoir lancé tous les autres.
 
 ## Dépendances

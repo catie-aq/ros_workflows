@@ -46,7 +46,7 @@ Aucune.
 
 Une étape `bash` qui lance `scripts/ros2_setup.sh` :
 
-1. Si `/opt/ros/<distribution>/setup.bash` manque et `install-ros` vaut `true` : `scripts/install_ros.sh`, sur le modèle de `ros-tooling/setup-ros` (paquet `ros2-apt-source` épinglé, `ros-<distribution>-ros-base`, `ros-dev-tools`). Commandes en `sudo` hors conteneur root.
+1. Si `/opt/ros/<distribution>/setup.bash` manque et `install-ros` vaut `true` : `scripts/install_ros.sh`, sur le modèle de `ros-tooling/setup-ros` (paquet `ros2-apt-source` épinglé et vérifié par `sha256sum`, `ros-<distribution>-ros-base`, `ros-dev-tools`). Commandes en `sudo` hors conteneur root.
 2. `git config --global --add safe.directory '*'` ; avec `token`, réécriture de `https://github.com/` en `https://x-access-token:<token>@github.com/`.
 3. Si `repos-file` : `vcs import`.
 4. Si `apt-packages` : installation des paquets absents.
@@ -62,3 +62,5 @@ Une étape `bash` qui lance `scripts/ros2_setup.sh` :
 - `rosdep install` échoue sur une clé inconnue (pas d'option `-r`) : une dépendance sans clé rosdep se déclare dans `skip-keys`.
 - Pas de cache apt : les runners passent déjà par le cache apt du cluster (`apt-cacher-ng`, `helm_github-arc`) et l'archive d'un cache GitHub coûterait autant que le téléchargement. Pour aller plus vite, utiliser une image qui contient déjà les dépendances.
 - Le jeton est écrit dans la configuration git globale du conteneur, qui disparaît avec le job.
+- `apt-get update` n'est lancé qu'une fois par job, grâce au marqueur `/tmp/.ros2-ci-apt-updated` : cela suppose un runner ou un conteneur éphémère (un job, un `/tmp`), ce que sont les runners `sonu-github-arc`. Sur une machine réutilisée, supprimer ce fichier avant le job.
+- `install_ros.sh` vérifie le `sha256` du paquet `ros2-apt-source` (version 1.3.0 épinglée pour `noble` et `jammy`) ; une autre version ou distribution demande `ROS_APT_SOURCE_VERSION` et `ROS_APT_SOURCE_SHA256`.

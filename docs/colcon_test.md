@@ -48,11 +48,32 @@ steps:
    - installe `python3-pytest-cov` et `gcovr` si `coverage`, `python3-pytest-rerunfailures` si `retries` ;
    - `colcon test` avec la sélection, `--retest-until-pass <retries>` (CTest), `--pytest-with-coverage` (colcon écrit `build/<paquet>/coverage.xml`) et `--pytest-args` en dernier, chaque argument commençant par `-` préfixé d'une espace comme colcon le demande ;
    - si `coverage` : `gcovr` pour chaque paquet CMake qui a produit des `.gcda`, limité aux sources du paquet hors `test/`, vers `build/<paquet>/coverage-gcovr.xml` (format Cobertura) ;
-   - `scripts/ros2_ci_report.py` : lit `build/<paquet>/pytest.xml`, `build/<paquet>/test_results/**/*.xml`, `coverage.xml` et `coverage-gcovr.xml`, écrit le résumé dans `$GITHUB_STEP_SUMMARY`, une annotation `::error` par test en échec, les sorties `tests`, `failures`, `skipped`, et copie les rapports dans `<workspace>/test-reports` avec `summary.md` ;
+   - `scripts/ros2_ci_report.py` : lit `build/<paquet>/pytest.xml`, `build/<paquet>/test_results/**/*.xml`, `coverage.xml` et `coverage-gcovr.xml`, écrit le résumé dans `$GITHUB_STEP_SUMMARY`, une annotation `::error` par test en échec, les sorties `tests`, `failures`, `skipped`, et copie les rapports dans `<workspace>/test-reports` avec `summary.md` (chemin pris depuis la racine du dépôt de travail, `$GITHUB_WORKSPACE`, pas depuis le workspace colcon) ;
    - `colcon test-result --verbose` ; le code de sortie de l'étape est celui de `colcon test` s'il a échoué, sinon celui de `colcon test-result`.
-2. Si `artifact-name` et que le job n'est pas annulé, même après un échec : `actions/upload-artifact@v4` de `<workspace>/test-reports`.
+2. Si `artifact-name` et que le job n'est pas annulé, même après un échec : `actions/upload-artifact@v4` de `<workspace>/test-reports`. Un dossier vide fait échouer l'étape (`if-no-files-found: error`) : le script y écrit toujours `summary.md`.
 
-Exemple de résumé (MiniPock, tests unitaires) : voir le rapport de la tâche 8 du refactor MiniPock.
+Exemple de résumé, sur le workspace d'exemple de ce dépôt (`tests/fixtures/ros_ws`) :
+
+```markdown
+## Tests ROS 2 (jazzy)
+
+:white_check_mark: 7 réussis, 0 en échec, 0 ignorés sur 7 tests dans 2 paquets.
+
+| Paquet | Tests | Réussis | En échec | Ignorés |
+| ------ | ----: | ------: | -------: | ------: |
+| `sample_cpp_pkg` | 3 | 3 | 0 | 0 |
+| `sample_pkg` | 4 | 4 | 0 | 0 |
+| **Total** | 7 | 7 | 0 | 0 |
+
+### Couverture
+
+| Paquet | Langage | Lignes | Couverture | Branches |
+| ------ | ------- | -----: | ---------: | -------: |
+| `sample_cpp_pkg` | C/C++ | 16/17 | 94.1 % | 71.4 % |
+| `sample_pkg` | Python | 32/63 | 50.8 % | 62.5 % |
+```
+
+Un test en échec ajoute une section « Tests en échec » (paquet, test, première ligne du message).
 
 ## Dépendances
 
@@ -60,7 +81,7 @@ Exemple de résumé (MiniPock, tests unitaires) : voir le rapport de la tâche 8
 
 ## Points d'attention
 
-- `pytest-args` est un tableau JSON, pas une ligne de commande : `'["-m", "not integration"]'`.
+- `pytest-args` est un tableau JSON, pas une ligne de commande : `'["-m", "not integration"]'`. Une valeur invalide arrête l'étape avant `colcon test`, de même qu'un `retries` qui n'est pas un entier positif ou nul.
 - Les relances (`retries`) masquent un test instable : à réserver aux tests d'intégration, avec un ticket pour le test concerné.
 - La couverture Python est mesurée par colcon sur tout le dossier du paquet (`--cov=<paquet>`), tests compris.
 - Le résumé ignore les fichiers XML de CTest lui-même ; `colcon test-result` les compte.

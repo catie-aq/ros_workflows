@@ -23,7 +23,7 @@ SKIP_KEYS="${SKIP_KEYS:-}"
 distro="$(resolve_distro "${DISTRIBUTION:-}")"
 export ROS_DISTRO="${distro}"
 
-if [ ! -f "/opt/ros/${distro}/setup.bash" ]; then
+if [ ! -f "$(ros_setup_file "${distro}")" ]; then
   if [ "${INSTALL_ROS:-true}" != "true" ]; then
     echo "/opt/ros/${distro} is missing and INSTALL_ROS is false." >&2
     exit 1
@@ -53,7 +53,7 @@ fi
 
 paths=("${workspace}/src")
 if [ -n "${PACKAGES//[[:space:]]/}" ]; then
-  source_setup "/opt/ros/${distro}/setup.bash"
+  source_setup "$(ros_setup_file "${distro}")"
   selection_args --packages-up-to "${PACKAGES}"
   mapfile -t paths < <(colcon list --base-paths "${workspace}/src" --paths-only "${SELECTION[@]}")
   if [ "${#paths[@]}" -eq 0 ]; then
