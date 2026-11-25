@@ -1,0 +1,35 @@
+# Tooling of the scripts used by the composite actions. The scripts themselves
+# only use the Python standard library: they run as is in any ROS 2 image.
+[project]
+name = "ros-workflows-scripts"
+version = "0.0.0"
+requires-python = ">=3.10"
+
+[dependency-groups]
+dev = ["pytest>=8", "pyyaml>=6"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["scripts"]
+norecursedirs = ["fixtures"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["ALL"]
+# COM812 conflicts with `ruff format`; CPY001 would require a license header in every file.
+ignore = ["T20", "S101", "D104", "COM812", "CPY001"]
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts are run by path, tests and fixtures are not importable packages.
+"scripts/*.py" = ["INP001"]
+"tests/**" = ["INP001", "D", "PLR2004", "ANN001"]
+"tests/fixtures/**/setup.py" = ["INP001"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

@@ -1,0 +1,4 @@
+self-hosted-runner:
+  labels:
+    - sonu-github-arc
+    - sonu-github-arc-gpu
