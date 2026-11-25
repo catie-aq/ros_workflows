@@ -45,6 +45,8 @@ jobs:
 
 Le dépôt appelant doit contenir un `.pre-commit-config.yaml` (job `pre-commit`), sinon passer `pre-commit: false`.
 
+Migration depuis `ros2.yml` : beaucoup de dépôts appellent déjà `generic_workflows/pre-commit.yaml` dans leur propre workflow (c'est le cas de MiniPock et de C-Rob). Avec `ros2-ci.yml`, retirer ce job du dépôt, ou passer `pre-commit: false`, sinon pre-commit tourne deux fois.
+
 ## Entrées
 
 | Nom | Type | Description | Requis | Défaut |
@@ -129,8 +131,8 @@ Job `integration` (si `integration`, après `build-test`, première distribution
 - Le job `pre-commit` tourne toujours sur `sonu-github-arc` : `generic_workflows/pre-commit.yaml` n'a pas d'entrée de runner.
 - Les tests d'intégration sont à exclure du job `build-test` par `pytest-args` (par exemple `'["-m", "not integration"]'`) : le workflow n'ajoute aucun filtre.
 - Sur le runner GPU, le job installe ROS 2 et toutes les dépendances à chaque exécution, faute de conteneur : compter plusieurs minutes de plus que sur le runner CPU. Le runner GPU n'accepte qu'un job à la fois (`maxRunners: 1`) et peut être suspendu pendant des mesures (README de `helm_github-arc`).
-- Le rendu matériel n'a pas été validé sur `sonu-github-arc-gpu` lui-même ; il l'a été dans l'image du runner avec une carte NVIDIA locale (rapport de la tâche 8 de MiniPock).
-- `permissions: read-all` : un appelant qui restreint son `GITHUB_TOKEN` en dessous (par exemple `contents: read` seul) fait échouer l'appel.
+- Le rendu matériel n'a pas été validé sur `sonu-github-arc-gpu` lui-même ; il l'a été dans l'image du runner (`ghcr.io/actions/actions-runner`) avec une carte NVIDIA locale : `eglinfo` y montre le moteur de rendu NVIDIA et `ROS2_CI_RENDERING=hardware`.
+- `permissions: contents: read` : l'appelant doit accorder au moins cela à son `GITHUB_TOKEN` (c'est le défaut des dépôts `catie-aq`).
 - Deux appels de ce workflow dans un même workflow appelant doivent avoir des `concurrency-group` différents, sinon le second annule le premier sur une PR, et les noms d'artefacts entrent en collision.
 - `sanitizer: asan` instrumente le C et le C++ : un test Python qui charge une bibliothèque instrumentée du workspace (messages générés, extensions) échoue au chargement. Réserver ce mode aux paquets C++ (`packages`).
 - Le résumé ne compte pas les fichiers XML de CTest lui-même : son total peut différer d'une unité par paquet CMake de celui de `colcon test-result`.

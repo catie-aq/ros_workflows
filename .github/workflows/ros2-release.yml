@@ -65,7 +65,8 @@ on:
         description: "Name of the artifact holding the HTML documentation, empty when not built."
         value: ${{ jobs.docs.outputs.artifact }}
 
-permissions: read-all
+permissions:
+  contents: read
 
 defaults:
   run:
