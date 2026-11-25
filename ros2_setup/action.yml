@@ -1,0 +1,55 @@
+name: "ROS 2 setup"
+description: "Prepare a colcon workspace: ROS 2 if absent, upstream repositories (vcs), system dependencies (rosdep install and check)."
+inputs:
+  workspace:
+    description: "colcon workspace, sources in <workspace>/src."
+    required: false
+    default: "ws"
+  distribution:
+    description: "ROS distribution. Empty means ROS_DISTRO of the image."
+    required: false
+    default: ""
+  install-ros:
+    description: "Install ROS 2 (ros-base and build tools) when /opt/ros/<distribution> is missing, for jobs without container."
+    required: false
+    default: "true"
+  repos-file:
+    description: "Path of a .repos file imported with vcs into <workspace>/src. Empty means none."
+    required: false
+    default: ""
+  packages:
+    description: "Restrict rosdep to these packages and their workspace dependencies, whitespace separated. Empty means every package."
+    required: false
+    default: ""
+  skip-keys:
+    description: "rosdep keys to skip, whitespace separated."
+    required: false
+    default: ""
+  rosdep-check:
+    description: "Run rosdep check after the install: fails if a dependency is still missing."
+    required: false
+    default: "true"
+  apt-packages:
+    description: "Extra apt packages, whitespace separated."
+    required: false
+    default: ""
+  token:
+    description: "Token for private https://github.com/ repositories (vcs import, rosdep sources). Empty means none."
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Set up workspace
+      shell: bash
+      env:
+        WORKSPACE: ${{ inputs.workspace }}
+        DISTRIBUTION: ${{ inputs.distribution }}
+        INSTALL_ROS: ${{ inputs.install-ros }}
+        REPOS_FILE: ${{ inputs.repos-file }}
+        PACKAGES: ${{ inputs.packages }}
+        SKIP_KEYS: ${{ inputs.skip-keys }}
+        ROSDEP_CHECK: ${{ inputs.rosdep-check }}
+        APT_PACKAGES: ${{ inputs.apt-packages }}
+        GIT_TOKEN: ${{ inputs.token }}
+      run: "${GITHUB_ACTION_PATH}/../scripts/ros2_setup.sh"
