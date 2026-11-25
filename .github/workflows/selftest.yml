@@ -7,7 +7,8 @@ on:
       - main
   workflow_dispatch:
 
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   scripts:
@@ -55,3 +56,24 @@ jobs:
     uses: ./.github/workflows/ros2-release.yml
     with:
       toolkit-ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+  # The reports of a build-test job must reach the artifact (JUnit and coverage of
+  # both sample packages, summary).
+  test-reports:
+    needs: ros2-ci
+    runs-on: sonu-github-arc
+    steps:
+      - name: Download reports
+        uses: actions/download-artifact@v4
+        with:
+          name: test-reports-jazzy-RelWithDebInfo
+          path: reports
+
+      - name: Check reports
+        run: |
+          set -x
+          test -s reports/summary.md
+          test -s reports/sample_pkg/pytest.xml
+          test -s reports/sample_pkg/coverage.xml
+          test -s reports/sample_cpp_pkg/test_results/sample_cpp_pkg/test_math.gtest.xml
+          test -s reports/sample_cpp_pkg/coverage-gcovr.xml

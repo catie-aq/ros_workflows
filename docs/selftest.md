@@ -35,13 +35,15 @@ Aucune.
 
 ## Fonctionnement
 
-Job `scripts` (conteneur `ghcr.io/astral-sh/uv:python3.12-bookworm-slim`) : `uv run --group dev pytest` sur Python 3.12 puis 3.10 (version de Humble). Les tests couvrent le résumé des tests et de la couverture, l'extraction du changelog, la table rosdep du workspace, l'export de variables, et la cohérence entre workflows, actions, scripts et docs.
+Job `scripts` (conteneur `ghcr.io/astral-sh/uv:python3.12-bookworm-slim`) : `uv run --group dev pytest` sur Python 3.12 puis 3.10 (version de Humble). Les tests couvrent le résumé des tests et de la couverture, `colcon_test.sh` lancé avec un ROS et un colcon factices (chemin des rapports, arguments pytest, valeurs invalides), l'extraction du changelog, la table rosdep du workspace, l'export de variables, et la cohérence entre workflows, actions, scripts et docs.
 
 Job `ros2-ci` : appel de `./.github/workflows/ros2-ci.yml` avec `toolkit-ref` = commit testé, sur `sample_pkg` (ament_python) et `sample_cpp_pkg` (ament_cmake, gtest) : `pre-commit` (dont actionlint, ruff, shellcheck), `lint` avec ruff, `build-test` sur Jazzy et Humble en `RelWithDebInfo` et `Debug`, job `integration` (talker et listener rclpy marqués `integration`, image `ros:jazzy-ros-base`).
 
 Job `ros2-ci-asan` : même workflow, `sample_cpp_pkg` seul, `Debug`, `sanitizer: asan`.
 
 Job `ros2-release` : appel de `./.github/workflows/ros2-release.yml` sur le workspace d'exemple (paquets Debian et documentation d'API).
+
+Job `test-reports` (après `ros2-ci`) : télécharge l'artefact `test-reports-jazzy-RelWithDebInfo` et vérifie qu'il contient `summary.md`, les JUnit et les rapports de couverture des deux paquets d'exemple.
 
 ## Dépendances
 

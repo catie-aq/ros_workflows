@@ -158,7 +158,8 @@ on:
         description: "Token for private submodules and upstream repositories. Empty means GITHUB_TOKEN."
         required: false
 
-permissions: read-all
+permissions:
+  contents: read
 
 defaults:
   run:
