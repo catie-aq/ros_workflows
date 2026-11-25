@@ -10,7 +10,7 @@ Ce dépôt contient des workflows GitHub Actions réutilisables pour compiler, t
 
 | Workflow | Rôle | Doc |
 | -------------------- | ---------------------------------------- | ---- |
-| `ros2.yml` | Compilation d'un paquet ROS 2 sur Jazzy et Rolling (tests désactivés). | [Compilation de paquets ROS 2](docs/ros2.md) |
+| `ros2.yml` | Compilation d'un paquet ROS 2 (Jazzy et Rolling par défaut) ; tests, rosdep, image et paquets configurables. | [Compilation de paquets ROS 2](docs/ros2.md) |
 | `ros.yml` | `pre-commit` puis compilation et tests d'un paquet ROS 1 sur Noetic. | [Compilation et tests de paquets ROS 1](docs/ros.md) |
 | `ros-tag.yml` | Tag à partir de la version du `package.xml` et brouillon de release. | [Tag et brouillon de release ROS](docs/ros-tag.md) |
 

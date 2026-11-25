@@ -2,6 +2,47 @@ name: Build & Test ROS 2 Packages
 
 on:
   workflow_call:
+    inputs:
+      run-tests:
+        description: "Run the tests of the built packages (colcon test)."
+        type: boolean
+        required: false
+        default: false
+      rosdep-install:
+        description: "Install the system dependencies declared in package.xml with rosdep."
+        type: boolean
+        required: false
+        default: false
+      distributions:
+        description: 'JSON array of ROS 2 distributions to build on, for example ["jazzy"].'
+        type: string
+        required: false
+        default: '["jazzy","rolling"]'
+      docker-image:
+        description: "Container image used for every distribution. Empty means osrf/ros:<distribution>-desktop."
+        type: string
+        required: false
+        default: ""
+      packages:
+        description: "Packages to build and test, separated by whitespace. Empty means the name of the calling repository."
+        type: string
+        required: false
+        default: ""
+      pytest-args:
+        description: 'JSON array of strings passed to colcon test as --pytest-args, for example ["-m","not integration"]. Empty or [] passes nothing.'
+        type: string
+        required: false
+        default: "[]"
+      timeout-minutes:
+        description: "Timeout of the job, in minutes."
+        type: number
+        required: false
+        default: 60
+      container-env:
+        description: 'JSON object of environment variables set in the container, for example {"LIBGL_ALWAYS_SOFTWARE":"1"}.'
+        type: string
+        required: false
+        default: "{}"
     secrets:
       PAT:
         required: true
@@ -10,24 +51,23 @@ on:
 jobs:
   build_and_test_ros2_package:
     runs-on: sonu-github-arc
-    strategy: # Define a matrix of ROS distributions and Docker images
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    strategy: # One entry per distribution requested by the caller
       fail-fast: false
       matrix:
-        include:
-          - docker_image: osrf/ros:jazzy-desktop
-            ros_distribution: jazzy
-          - docker_image: osrf/ros:rolling-desktop
-            ros_distribution: rolling
+        ros_distribution: ${{ fromJSON(inputs.distributions) }}
 
-    container: # Use the Docker image defined in the matrix
-      image: ${{ matrix.docker_image }}
+    container:
+      image: ${{ inputs.docker-image || format('osrf/ros:{0}-desktop', matrix.ros_distribution) }}
+      env: ${{ fromJSON(inputs.container-env) }}
     steps:
       - name: Build and test ROS 2
         uses: ros-tooling/action-ros-ci@0.3.13
         with:
-          package-name: ${{ github.event.repository.name }}
+          package-name: ${{ inputs.packages || github.event.repository.name }}
           target-ros2-distro: ${{ matrix.ros_distribution }}
           import-token: ${{ secrets.PAT }}
-          skip-tests: true
-          skip-rosdep-install: true
+          skip-tests: ${{ !inputs.run-tests }}
+          skip-rosdep-install: ${{ !inputs.rosdep-install }}
           rosdep-check: false
+          colcon-defaults: ${{ (inputs.pytest-args != '' && inputs.pytest-args != '[]') && format('{{"test":{{"pytest-args":{0}}}}}', inputs.pytest-args) || '' }}
