@@ -1,0 +1,57 @@
+name: Self-test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  scripts:
+    runs-on: sonu-github-arc
+    container:
+      image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Tests of the scripts
+        run: uv run --group dev pytest -v
+
+      - name: Tests of the scripts on Python 3.10 (Humble)
+        run: uv run --python 3.10 --group dev pytest -q
+
+  # The sample workspace (tests/fixtures/ros_ws) through the reusable workflow of
+  # this revision: pre-commit (actionlint, ruff), lint, build-test on two
+  # distributions and two build types, integration job.
+  ros2-ci:
+    uses: ./.github/workflows/ros2-ci.yml
+    with:
+      distributions: '["jazzy", "humble"]'
+      build-types: '["RelWithDebInfo", "Debug"]'
+      pytest-args: '["-m", "not integration"]'
+      lint-ruff: true
+      integration: true
+      integration-image: "ros:jazzy-ros-base"
+      container-env: '{"ROS_AUTOMATIC_DISCOVERY_RANGE": "LOCALHOST"}'
+      toolkit-ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+  ros2-ci-asan:
+    uses: ./.github/workflows/ros2-ci.yml
+    with:
+      packages: "sample_cpp_pkg"
+      build-types: '["Debug"]'
+      sanitizer: asan
+      coverage: false
+      pre-commit: false
+      lint: false
+      concurrency-group: asan
+      toolkit-ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+  ros2-release:
+    uses: ./.github/workflows/ros2-release.yml
+    with:
+      toolkit-ref: ${{ github.event.pull_request.head.sha || github.sha }}
