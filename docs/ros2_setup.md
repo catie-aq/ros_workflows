@@ -29,7 +29,7 @@ steps:
 | `distribution` | string | Distribution ROS. Vide : `ROS_DISTRO` de l'image. | non | `""` |
 | `install-ros` | string | Installe ROS 2 (`ros-<distribution>-ros-base`, outils de build) si `/opt/ros/<distribution>` manque. | non | `true` |
 | `repos-file` | string | Fichier `.repos` importé avec `vcs import --recursive --shallow` dans `<workspace>/src`. | non | `""` |
-| `packages` | string | Limite rosdep à ces paquets et à leurs dépendances du workspace. Vide : tous. | non | `""` |
+| `packages` | string | Limite rosdep à ces paquets et à leurs dépendances du workspace. Vide : tous les paquets que colcon trouve. | non | `""` |
 | `skip-keys` | string | Clés rosdep ignorées, séparées par des espaces. | non | `""` |
 | `rosdep-check` | string | Lance `rosdep check` après l'installation. | non | `true` |
 | `apt-packages` | string | Paquets apt supplémentaires. | non | `""` |
@@ -50,8 +50,9 @@ Une étape `bash` qui lance `scripts/ros2_setup.sh` :
 2. `git config --global --add safe.directory '*'` ; avec `token`, réécriture de `https://github.com/` en `https://x-access-token:<token>@github.com/`.
 3. Si `repos-file` : `vcs import`.
 4. Si `apt-packages` : installation des paquets absents.
-5. `rosdep init` si besoin, `rosdep update --rosdistro <distribution>`, `rosdep install --from-paths <chemins> --ignore-src -y --rosdistro <distribution> --skip-keys <skip-keys>`. Avec `packages`, les chemins sont ceux de `colcon list --packages-up-to <packages>`, sinon `<workspace>/src`.
-6. Si `rosdep-check` : `rosdep check` sur les mêmes chemins.
+5. Chemins des paquets : `colcon list --base-paths <workspace>/src --paths-only`, avec `--packages-up-to <packages>` si `packages` est renseigné. rosdep ne reçoit que ces dossiers : les arborescences marquées `COLCON_IGNORE` ou `AMENT_IGNORE` (fixtures de test, sources vendorisées) restent hors de sa portée, alors que `rosdep install --from-paths <workspace>/src` lirait tous les `package.xml` et échouerait sur le premier invalide. Aucun paquet trouvé : échec.
+6. `rosdep init` si besoin, `rosdep update --rosdistro <distribution>` (5 min au plus, 3 essais), `apt-get update` (une fois par job, avec `Acquire::Retries 3` et des délais de 60 s écrits dans `/etc/apt/apt.conf.d/80-ros2-ci`), `rosdep install --from-paths <chemins> --ignore-src -y --rosdistro <distribution> --skip-keys <skip-keys>` avec `DEBIAN_FRONTEND=noninteractive`.
+7. Si `rosdep-check` : `rosdep check` sur les mêmes chemins.
 
 ## Dépendances
 

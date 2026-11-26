@@ -7,7 +7,8 @@
 #   DISTRIBUTION   ROS distribution (default: $ROS_DISTRO of the image)
 #   INSTALL_ROS    install ROS 2 when /opt/ros/<distro> is missing (default: true)
 #   REPOS_FILE     .repos file imported with vcs into $WORKSPACE/src
-#   PACKAGES       restrict rosdep to these packages and their workspace dependencies
+#   PACKAGES       restrict rosdep to these packages and their workspace dependencies;
+#                  otherwise every package colcon discovers (ignored trees left out)
 #   SKIP_KEYS      rosdep keys to skip, whitespace separated
 #   ROSDEP_CHECK   run rosdep check after the install (default: true)
 #   APT_PACKAGES   extra apt packages, whitespace separated
@@ -51,31 +52,26 @@ if [ -n "${APT_PACKAGES//[[:space:]]/}" ]; then
   endgroup
 fi
 
-paths=("${workspace}/src")
-if [ -n "${PACKAGES//[[:space:]]/}" ]; then
-  source_setup "$(ros_setup_file "${distro}")"
-  selection_args --packages-up-to "${PACKAGES}"
-  mapfile -t paths < <(colcon list --base-paths "${workspace}/src" --paths-only "${SELECTION[@]}")
-  if [ "${#paths[@]}" -eq 0 ]; then
-    echo "No package matches PACKAGES='${PACKAGES}'." >&2
-    exit 1
-  fi
-fi
+# rosdep only sees the packages colcon builds: ignored trees (COLCON_IGNORE,
+# AMENT_IGNORE), test fixtures and vendored sources are left out.
+source_setup "$(ros_setup_file "${distro}")"
+package_paths "${workspace}/src" "${PACKAGES}"
+paths=("${PACKAGE_PATHS[@]}")
+printf 'rosdep paths:\n'
+printf '  %s\n' "${paths[@]}"
 
 group "rosdep install (${distro})"
 if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then
   as_root rosdep init
 fi
-rosdep update --rosdistro "${distro}"
-if [ ! -f /tmp/.ros2-ci-apt-updated ]; then
-  as_root apt-get update -qq
-  touch /tmp/.ros2-ci-apt-updated
-fi
+rosdep_update "${distro}"
+apt_update_once
 skip=()
 if [ -n "${SKIP_KEYS//[[:space:]]/}" ]; then
   skip=(--skip-keys "${SKIP_KEYS}")
 fi
-DEBIAN_FRONTEND=noninteractive rosdep install --from-paths "${paths[@]}" --ignore-src -y -q \
+# Through as_root (sudo -E off root): rosdep's own sudo would drop DEBIAN_FRONTEND.
+as_root rosdep install --from-paths "${paths[@]}" --ignore-src -y -q \
   --rosdistro "${distro}" "${skip[@]}"
 endgroup
 

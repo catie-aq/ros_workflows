@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>broken_pkg</name>
+  <description>Invalid on purpose: no version tag.</description>
+  <maintainer email="sonu@catie.fr">CATIE</maintainer>
+  <license>Apache-2.0</license>
+</package>

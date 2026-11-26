@@ -32,7 +32,7 @@ def test_python_counts(collected) -> None:
 def test_cpp_counts_gtest_and_linter_errors(collected) -> None:
     results, _ = collected
     cpp_pkg = next(result for result in results if result.name == "cpp_pkg")
-    # 3 gtest cases + 1 linter error; broken.xml and the stamp package.xml are ignored.
+    # 3 gtest cases + 1 linter error; broken.xml is ignored.
     assert cpp_pkg.total == 4
     assert cpp_pkg.count("failed") == 1
     assert cpp_pkg.count("error") == 1
