@@ -33,6 +33,6 @@ curl -fsSL -o /tmp/ros2-apt-source.deb \
   "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${version}/ros2-apt-source_${version}.${codename}_all.deb"
 echo "${expected}  /tmp/ros2-apt-source.deb" | sha256sum --check --strict
 as_root dpkg -i /tmp/ros2-apt-source.deb
-rm -f /tmp/.ros2-ci-apt-updated
+rm -f "$(apt_marker)"
 apt_install "ros-${distro}-ros-base" ros-dev-tools python3-colcon-common-extensions
 endgroup

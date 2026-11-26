@@ -19,13 +19,14 @@ distro="$(resolve_distro "${DISTRIBUTION:-}")"
 source_setup "$(ros_setup_file "${distro}")"
 
 # Package directories, skipping trees marked COLCON_IGNORE or AMENT_IGNORE.
+ignored_list="$(mktemp)"
 mapfile -t packages < <(
-  find "${lint_path}" \( -name COLCON_IGNORE -o -name AMENT_IGNORE \) -printf '%h\n' >/tmp/.ros2-lint-ignored
+  find "${lint_path}" \( -name COLCON_IGNORE -o -name AMENT_IGNORE \) -printf '%h\n' >"${ignored_list}"
   find "${lint_path}" -name package.xml -not -path '*/.git/*' -printf '%h\n' | sort | while read -r dir; do
     skip=false
     while read -r ignored; do
       case "${dir}/" in "${ignored}/"*) skip=true ;; esac
-    done </tmp/.ros2-lint-ignored
+    done <"${ignored_list}"
     [ "${skip}" = "false" ] && echo "${dir}"
   done
 )
