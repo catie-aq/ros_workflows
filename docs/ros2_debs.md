@@ -39,9 +39,9 @@ Aucune.
 
 1. `scripts/build_debs.sh` :
    - installe `python3-bloom`, `fakeroot`, `debhelper`, `dh-python` ;
-   - liste les paquets dans l'ordre topologique (`colcon list --topological-order`) ;
+   - liste les paquets que colcon trouve, dans l'ordre topologique (`colcon list --topological-order`) : les arborescences `COLCON_IGNORE` sont exclues ;
    - écrit avec `scripts/workspace_rosdep.py` une table rosdep qui associe chaque paquet du workspace à son nom Debian (`ros-<distribution>-<nom avec tirets>`), déclarée dans `/etc/ros/rosdep/sources.list.d/00-workspace.list`, puis `rosdep update` : un paquet qui dépend d'un autre paquet du workspace se résout ;
-   - pour chaque paquet, sur une copie des sources : `bloom-generate rosdebian --os-name ubuntu --os-version <codename> --ros-distro <distribution>`, `fakeroot debian/rules binary`, installation du `.deb` produit, déplacement dans `output-dir` ;
+   - pour chaque paquet, sur une copie des sources : `bloom-generate rosdebian --os-name ubuntu --os-version <codename> --ros-distro <distribution>`, `fakeroot debian/rules binary` avec `DEB_BUILD_OPTIONS=nocheck` (les tests ne tournent pas pendant l'empaquetage, comme sur le buildfarm), installation du `.deb` produit, déplacement dans `output-dir` ;
    - liste des `.deb` dans `$GITHUB_STEP_SUMMARY`.
 2. Si `artifact-name` : `actions/upload-artifact@v4` des `.deb`.
 

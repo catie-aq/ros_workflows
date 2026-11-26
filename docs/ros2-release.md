@@ -68,6 +68,7 @@ Le déclencheur `release: published` vient d'une action humaine (publication du 
 | `skip-keys` | string | Clés rosdep ignorées. | non | `""` |
 | `debs` | boolean | Construit les paquets Debian (artefact `debs-<distribution>`). | non | `true` |
 | `docs` | boolean | Construit la documentation d'API (artefact `api-docs`). | non | `true` |
+| `timeout-minutes` | number | Délai de chaque job, en minutes : un téléchargement bloqué échoue vite au lieu d'occuper le runner. | non | `30` |
 | `toolkit-ref` | string | Révision de `catie-aq/ros_workflows` dont les actions et scripts sont utilisés. | non | `main` |
 
 ## Secrets
