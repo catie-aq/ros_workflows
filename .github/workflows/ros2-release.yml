@@ -48,6 +48,11 @@ on:
         type: boolean
         required: false
         default: true
+      timeout-minutes:
+        description: "Timeout of each job, in minutes: a stalled download fails fast instead of holding the runner."
+        type: number
+        required: false
+        default: 30
       toolkit-ref:
         description: "Revision of catie-aq/ros_workflows whose actions and scripts the jobs use."
         type: string
@@ -76,7 +81,7 @@ jobs:
   debs:
     if: ${{ inputs.debs }}
     runs-on: ${{ inputs.runner }}
-    timeout-minutes: 60
+    timeout-minutes: ${{ inputs.timeout-minutes }}
     container:
       image: ${{ inputs.image || format('ros:{0}-ros-base', inputs.distribution) }}
     outputs:
@@ -115,7 +120,7 @@ jobs:
   docs:
     if: ${{ inputs.docs }}
     runs-on: ${{ inputs.runner }}
-    timeout-minutes: 60
+    timeout-minutes: ${{ inputs.timeout-minutes }}
     container:
       image: ${{ inputs.image || format('ros:{0}-ros-base', inputs.distribution) }}
     outputs:

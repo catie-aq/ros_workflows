@@ -41,8 +41,13 @@ group "rosdep keys of the workspace packages"
 rosdep_yaml="$(mktemp -d)/workspace.yaml"
 python3 "${scripts}/workspace_rosdep.py" --distro "${distro}" --output "${rosdep_yaml}" "${paths[@]}"
 echo "yaml file://${rosdep_yaml}" | as_root tee /etc/ros/rosdep/sources.list.d/00-workspace.list
-rosdep update --rosdistro "${distro}" >/dev/null
+rosdep_update "${distro}" >/dev/null
 endgroup
+
+# Like the buildfarm binary jobs: tests belong to the CI, not to the package build.
+# Without this, dh_auto_test runs every test of the package (integration ones
+# included), which can be slow or wait on a ROS graph.
+export DEB_BUILD_OPTIONS="${DEB_BUILD_OPTIONS:-nocheck}"
 
 staging="$(mktemp -d)"
 for entry in "${entries[@]}"; do
